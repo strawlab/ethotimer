@@ -94,11 +94,7 @@ impl Component for Model {
         html! {
             <div id="page-container",>
                 <div id="content-wrap",>
-                    <h1>{"ethotimer"}</h1>
-                    <p>
-                        {"Created by the "}
-                        <a href="https://strawlab.org/">{"Straw Lab"}</a>{", University of Freiburg."}
-                    </p>
+                    <h1>{"⏱ ethotimer"}</h1>
                     <TimerWidget
                         storage=&self.timer1,
                         on_start=self.link.callback(|_| Msg::Timer1Start),

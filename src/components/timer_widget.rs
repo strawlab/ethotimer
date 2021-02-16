@@ -68,7 +68,7 @@ pub struct Props {
 
 pub struct TimerWidget {
     link: ComponentLink<Self>,
-    _job: Box<dyn Task>,
+    job: Option<Box<dyn Task>>,
     storage: TimerStorage,
     on_start: Option<Callback<()>>,
 }
@@ -78,14 +78,9 @@ impl Component for TimerWidget {
     type Properties = Props;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let handle = IntervalService::spawn(
-            Duration::from_millis(200),
-            link.callback(|_| Msg::RenderAll),
-        );
-
         Self {
             link,
-            _job: Box::new(handle),
+            job: None,
             storage: props.storage,
             on_start: props.on_start,
         }
@@ -107,19 +102,40 @@ impl Component for TimerWidget {
                     if let Some(ref mut callback) = self.on_start {
                         callback.emit(());
                     }
+
+                    let handle = IntervalService::spawn(
+                        Duration::from_millis(100),
+                        self.link.callback(|_| Msg::RenderAll),
+                    );
+                    self.job = Some(Box::new(handle));
                 }
             }
-            Msg::RenderAll => {}
+            Msg::RenderAll => {
+                // This triggers a rerender because ShouldRender is returned true.
+
+                // Also check if we need to keep the timer running.
+                let stor = self.storage.rc.borrow();
+                if stor.current_start.is_none() {
+                    self.job = None;
+                }
+            }
         }
         true
     }
 
     fn view(&self) -> Html {
-        let elapsed = format!("Elapsed: {:?}", self.storage.rc.borrow().total_elapsed());
+        let elapsed = format!(
+            "{:4.1}",
+            self.storage.rc.borrow().total_elapsed().as_millis() as f64 / 1000.0
+        );
         html! {
-            <div>
-                <button class=("btn",), onclick=self.link.callback(|_| Msg::OnStart),>{ "Start" }</button>
-                {&elapsed}
+            <div class="timer">
+                <div>
+                    <button class=("btn",), onclick=self.link.callback(|_| Msg::OnStart),>{ "Start ⏱" }</button>
+                </div>
+                <div>
+                    <span class="elapsed">{&elapsed}</span>
+                </div>
             </div>
         }
     }
