@@ -113,7 +113,7 @@ impl Component for Model {
                         />
                     <button class=("btn",), onclick=self.link.callback(|_| Msg::StopAll),>{ "Stop" }</button>
                     <button class=("btn",), onclick=self.link.callback(|_| Msg::Clear),>{ "Clear" }</button>
-                    <footer id="footer">{format!("Viewer date: {} (revision {})",
+                    <footer id="footer">{"Source code: "}<a href="https://github.com/strawlab/ethotimer/">{"strawlab/ethotimer"}</a>{" | "}{format!("Compile date: {} (revision {})",
                                         env!("GIT_DATE"),
                                         env!("GIT_HASH"))}
                     </footer>

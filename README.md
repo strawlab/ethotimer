@@ -1,3 +1,7 @@
+# ethotimer
+
+View it live at https://strawlab.org/ethotimer/
+
 ## Development
 
     build.sh

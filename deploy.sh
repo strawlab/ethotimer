@@ -1,1 +1,2 @@
-rsync -avzP --delete deploy/ medaka:/var/www/strawlab.org/html/ethotimer/
+scp -r deploy strawlab-org:strawlab.org/ethotimer.new
+ssh strawlab-org "rm -rf strawlab.org/ethotimer && mv strawlab.org/ethotimer.new strawlab.org/ethotimer"
