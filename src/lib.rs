@@ -95,20 +95,24 @@ impl Component for Model {
             <div id="page-container",>
                 <div id="content-wrap",>
                     <h1>{"⏱ ethotimer"}</h1>
-                    <TimerWidget
-                        storage=&self.timer1,
-                        on_start=self.link.callback(|_| Msg::Timer1Start),
-                        />
-                    <TimerWidget
-                        storage=&self.timer2,
-                        on_start=self.link.callback(|_| Msg::Timer2Start),
-                        />
-                    <TimerWidget
-                        storage=&self.timer3,
-                        on_start=self.link.callback(|_| Msg::Timer3Start),
-                        />
-                    <button class=("btn",), onclick=self.link.callback(|_| Msg::StopAll),>{ "Stop" }</button>
-                    <button class=("btn",), onclick=self.link.callback(|_| Msg::Clear),>{ "Clear" }</button>
+                    <section class="timers">
+                        <TimerWidget
+                            storage=&self.timer1,
+                            on_start=self.link.callback(|_| Msg::Timer1Start),
+                            />
+                        <TimerWidget
+                            storage=&self.timer2,
+                            on_start=self.link.callback(|_| Msg::Timer2Start),
+                            />
+                        <TimerWidget
+                            storage=&self.timer3,
+                            on_start=self.link.callback(|_| Msg::Timer3Start),
+                            />
+                    </section>
+                    <section class="global-buttons">
+                        <button class=("btn","global-button"), id="stop-btn", onclick=self.link.callback(|_| Msg::StopAll),>{ "Stop" }</button>
+                        <button class=("btn","global-button"), id="clear-btn", onclick=self.link.callback(|_| Msg::Clear),>{ "Clear" }</button>
+                    </section>
                     <footer id="footer">{"Source code: "}<a href="https://github.com/strawlab/ethotimer/">{"strawlab/ethotimer"}</a>{" | "}{format!("Compile date: {} (revision {})",
                                         env!("GIT_DATE"),
                                         env!("GIT_HASH"))}
