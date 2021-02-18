@@ -61,6 +61,8 @@ impl TimerStorageInner {
 pub struct Props {
     /// The backing store for the data.
     pub storage: TimerStorage,
+    /// Text to show.
+    pub text: String,
     /// Triggered when the timer is started.
     #[prop_or_default]
     pub on_start: Option<Callback<()>>,
@@ -70,6 +72,7 @@ pub struct TimerWidget {
     link: ComponentLink<Self>,
     job: Option<Box<dyn Task>>,
     storage: TimerStorage,
+    text: String,
     on_start: Option<Callback<()>>,
 }
 
@@ -82,12 +85,14 @@ impl Component for TimerWidget {
             link,
             job: None,
             storage: props.storage,
+            text: props.text,
             on_start: props.on_start,
         }
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         self.storage = props.storage;
+        self.text = props.text;
         self.on_start = props.on_start;
         true
     }
@@ -132,7 +137,7 @@ impl Component for TimerWidget {
             <div class="timer">
                 <button class=("btn","timer-start-btn"), onclick=self.link.callback(|_| Msg::OnStart),>{ "Start ⏱" }</button>
                 <div>
-                    <span class="elapsed">{&elapsed}</span>
+                    {&self.text}<span class="elapsed">{&elapsed}</span>
                 </div>
             </div>
         }

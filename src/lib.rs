@@ -10,6 +10,8 @@ mod components;
 
 use components::timer_widget::{TimerStorage, TimerWidget};
 
+const VIEW_DATA_HASH: &str = "#view-data";
+
 // -----------------------------------------------------------------------------
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -29,11 +31,17 @@ impl std::fmt::Display for MyError {
 
 // -----------------------------------------------------------------------------
 
+struct TimedButtonPress {
+    activity: u8,
+    when: chrono::DateTime<chrono::Local>,
+}
+
 struct Model {
     link: ComponentLink<Self>,
     timer1: TimerStorage,
     timer2: TimerStorage,
     timer3: TimerStorage,
+    history: Vec<TimedButtonPress>,
 }
 
 #[derive(Clone)]
@@ -42,7 +50,9 @@ pub enum Msg {
     Timer2Start,
     Timer3Start,
     StopAll,
-    Clear,
+    ClearData,
+    ViewData,
+    ViewTimers,
 }
 
 impl Component for Model {
@@ -55,6 +65,7 @@ impl Component for Model {
             timer1: TimerStorage::new(),
             timer2: TimerStorage::new(),
             timer3: TimerStorage::new(),
+            history: vec![],
         }
     }
 
@@ -65,55 +76,62 @@ impl Component for Model {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::Timer1Start => {
+                self.push_history(1);
                 self.timer2.stop();
                 self.timer3.stop();
             }
             Msg::Timer2Start => {
+                self.push_history(2);
                 self.timer1.stop();
                 self.timer3.stop();
             }
             Msg::Timer3Start => {
+                self.push_history(3);
                 self.timer1.stop();
                 self.timer2.stop();
             }
             Msg::StopAll => {
-                self.timer1.stop();
-                self.timer2.stop();
-                self.timer3.stop();
+                self.stop_all();
             }
-            Msg::Clear => {
+            Msg::ClearData => {
                 self.timer1.clear();
                 self.timer2.clear();
                 self.timer3.clear();
+                self.history = vec![];
+            }
+            Msg::ViewData => {
+                self.stop_all();
+                let location = web_sys::window().unwrap().location();
+                let new_location = format!("{}{}", location.pathname().unwrap(), VIEW_DATA_HASH);
+                location.assign(&new_location).unwrap();
+            }
+            Msg::ViewTimers => {
+                let location = web_sys::window().unwrap().location();
+                let new_location = format!("{}", location.pathname().unwrap());
+                location.assign(&new_location).unwrap();
             }
         }
         true
     }
 
     fn view(&self) -> Html {
+        // let document = web_sys::window().unwrap().document().unwrap();
+        // // Should we use location() instead of url()?
+        // let url = web_sys::Url::new(&document.url().unwrap()).unwrap();
+        // let hash = url.hash();
+        let hash = web_sys::window().unwrap().location().hash().unwrap();
+        let inner = if hash == VIEW_DATA_HASH {
+            self.view_data()
+        } else {
+            self.view_timers()
+        };
+
         html! {
             <div id="page-container",>
                 <div id="content-wrap",>
                     <h1>{"⏱ ethotimer"}</h1>
                     <p class="small-text">{"Timers for collecting data to make ethograms and related."}</p>
-                    <section class="timers">
-                        <TimerWidget
-                            storage=&self.timer1,
-                            on_start=self.link.callback(|_| Msg::Timer1Start),
-                            />
-                        <TimerWidget
-                            storage=&self.timer2,
-                            on_start=self.link.callback(|_| Msg::Timer2Start),
-                            />
-                        <TimerWidget
-                            storage=&self.timer3,
-                            on_start=self.link.callback(|_| Msg::Timer3Start),
-                            />
-                    </section>
-                    <section class="global-buttons">
-                        <button class=("btn","global-button"), id="stop-btn", onclick=self.link.callback(|_| Msg::StopAll),>{ "Stop" }</button>
-                        <button class=("btn","global-button"), id="clear-btn", onclick=self.link.callback(|_| Msg::Clear),>{ "Clear" }</button>
-                    </section>
+                    {inner}
                     <footer id="footer", class="small-text">{"Source code: "}<a href="https://github.com/strawlab/ethotimer/">{"strawlab/ethotimer"}</a>{" | "}{format!("Compile date: {} (revision {})",
                                         env!("GIT_DATE"),
                                         env!("GIT_HASH"))}
@@ -124,11 +142,75 @@ impl Component for Model {
     }
 }
 
-// fn empty() -> Html {
-//     html! {
-//         <></>
-//     }
-// }
+impl Model {
+    fn push_history(&mut self, activity: u8) {
+        self.history.push(TimedButtonPress {
+            activity,
+            when: chrono::Local::now(),
+        });
+    }
+    fn stop_all(&mut self) {
+        let n_history = self.history.len();
+        if n_history > 0 {
+            if self.history[n_history - 1].activity != 0 {
+                self.push_history(0);
+            }
+        }
+        self.timer1.stop();
+        self.timer2.stop();
+        self.timer3.stop();
+    }
+
+    fn get_data_csv(&self) -> String {
+        let mut lines = vec!["activity_id,duratinon_from_start_seconds".to_string()];
+        if self.history.len() > 0 {
+            let s0 = self.history[0].when;
+            for row in self.history.iter() {
+                let dur_msec = row.when.signed_duration_since(s0).num_milliseconds();
+                lines.push(format!("{},{}", row.activity, dur_msec as f64 / 1000.0,));
+            }
+        }
+        lines.join("\n")
+    }
+
+    fn view_data(&self) -> Html {
+        let data_csv = self.get_data_csv();
+        html! {
+            <>
+                <button class=("btn","global-button"), id="view-btn", onclick=self.link.callback(|_| Msg::ViewTimers),>{ "Done" }</button>
+                <pre>{data_csv}</pre>
+            </>
+        }
+    }
+    fn view_timers(&self) -> Html {
+        html! {
+            <>
+                <section class="timers">
+                    <TimerWidget
+                        storage=&self.timer1,
+                        text="Activity 1: ",
+                        on_start=self.link.callback(|_| Msg::Timer1Start),
+                        />
+                    <TimerWidget
+                        storage=&self.timer2,
+                        text="Activity 2: ",
+                        on_start=self.link.callback(|_| Msg::Timer2Start),
+                        />
+                    <TimerWidget
+                        storage=&self.timer3,
+                        text="Activity 3: ",
+                        on_start=self.link.callback(|_| Msg::Timer3Start),
+                        />
+                </section>
+                <section class="global-buttons">
+                    <button class=("btn","global-button"), id="stop-btn", onclick=self.link.callback(|_| Msg::StopAll),>{ "Stop" }</button>
+                    <button class=("btn","global-button"), id="clear-btn", onclick=self.link.callback(|_| Msg::ClearData),>{ "Clear Data" }</button>
+                    <button class=("btn","global-button"), id="view-btn", onclick=self.link.callback(|_| Msg::ViewData),>{ "Stop and View Data" }</button>
+                </section>
+            </>
+        }
+    }
+}
 
 // -----------------------------------------------------------------------------
 
