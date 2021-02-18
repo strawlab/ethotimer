@@ -130,9 +130,7 @@ impl Component for TimerWidget {
         );
         html! {
             <div class="timer">
-                <div>
-                    <button class=("btn",), onclick=self.link.callback(|_| Msg::OnStart),>{ "Start ⏱" }</button>
-                </div>
+                <button class=("btn","timer-start-btn"), onclick=self.link.callback(|_| Msg::OnStart),>{ "Start ⏱" }</button>
                 <div>
                     <span class="elapsed">{&elapsed}</span>
                 </div>

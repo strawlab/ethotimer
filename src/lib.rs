@@ -95,6 +95,7 @@ impl Component for Model {
             <div id="page-container",>
                 <div id="content-wrap",>
                     <h1>{"⏱ ethotimer"}</h1>
+                    <p class="small-text">{"Timers for collecting data to make ethograms and related."}</p>
                     <section class="timers">
                         <TimerWidget
                             storage=&self.timer1,
@@ -113,7 +114,7 @@ impl Component for Model {
                         <button class=("btn","global-button"), id="stop-btn", onclick=self.link.callback(|_| Msg::StopAll),>{ "Stop" }</button>
                         <button class=("btn","global-button"), id="clear-btn", onclick=self.link.callback(|_| Msg::Clear),>{ "Clear" }</button>
                     </section>
-                    <footer id="footer">{"Source code: "}<a href="https://github.com/strawlab/ethotimer/">{"strawlab/ethotimer"}</a>{" | "}{format!("Compile date: {} (revision {})",
+                    <footer id="footer", class="small-text">{"Source code: "}<a href="https://github.com/strawlab/ethotimer/">{"strawlab/ethotimer"}</a>{" | "}{format!("Compile date: {} (revision {})",
                                         env!("GIT_DATE"),
                                         env!("GIT_HASH"))}
                     </footer>
