@@ -61,6 +61,8 @@ impl TimerStorageInner {
 pub struct Props {
     /// The backing store for the data.
     pub storage: TimerStorage,
+    #[prop_or(true)]
+    pub show_start_button: bool,
     /// Text to show.
     pub text: String,
     /// Triggered when the timer is started.
@@ -72,6 +74,7 @@ pub struct TimerWidget {
     link: ComponentLink<Self>,
     job: Option<Box<dyn Task>>,
     storage: TimerStorage,
+    show_start_button: bool,
     text: String,
     on_start: Option<Callback<()>>,
 }
@@ -85,6 +88,7 @@ impl Component for TimerWidget {
             link,
             job: None,
             storage: props.storage,
+            show_start_button: props.show_start_button,
             text: props.text,
             on_start: props.on_start,
         }
@@ -92,6 +96,7 @@ impl Component for TimerWidget {
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         self.storage = props.storage;
+        self.show_start_button = props.show_start_button;
         self.text = props.text;
         self.on_start = props.on_start;
         true
@@ -133,9 +138,16 @@ impl Component for TimerWidget {
             "{:4.1}",
             self.storage.rc.borrow().total_elapsed().as_millis() as f64 / 1000.0
         );
+        let start_button = if self.show_start_button {
+            html! {
+                <button class=("btn","timer-start-btn"), onclick=self.link.callback(|_| Msg::OnStart),>{ "Start ⏱" }</button>
+            }
+        } else {
+            html! {}
+        };
         html! {
             <div class="timer">
-                <button class=("btn","timer-start-btn"), onclick=self.link.callback(|_| Msg::OnStart),>{ "Start ⏱" }</button>
+                {start_button}
                 <div>
                     {&self.text}<span class="elapsed">{&elapsed}</span>
                 </div>
