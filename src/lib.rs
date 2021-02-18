@@ -162,12 +162,12 @@ impl Model {
     }
 
     fn get_data_csv(&self) -> String {
-        let mut lines = vec!["activity_id,duratinon_from_start_seconds".to_string()];
+        let mut lines = vec!["duration_from_start_seconds,activity_id".to_string()];
         if self.history.len() > 0 {
             let s0 = self.history[0].when;
             for row in self.history.iter() {
                 let dur_msec = row.when.signed_duration_since(s0).num_milliseconds();
-                lines.push(format!("{},{}", row.activity, dur_msec as f64 / 1000.0,));
+                lines.push(format!("{},{}", dur_msec as f64 / 1000.0, row.activity));
             }
         }
         lines.join("\n")
@@ -177,7 +177,7 @@ impl Model {
         let data_csv = self.get_data_csv();
         html! {
             <>
-                <button class=("btn","global-button"), id="view-btn", onclick=self.link.callback(|_| Msg::ViewTimers),>{ "Done" }</button>
+                <button class=("btn","global-button"), id="view-btn", onclick=self.link.callback(|_| Msg::ViewTimers),>{ "← Return to timers" }</button>
                 <pre>{data_csv}</pre>
             </>
         }
