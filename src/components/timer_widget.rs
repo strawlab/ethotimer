@@ -150,8 +150,14 @@ impl Component for TimerWidget {
             self.storage.rc.borrow().total_elapsed().as_millis() as f64 / 1000.0
         );
         let start_button = if self.show_start_button {
+            let stor = self.storage.rc.borrow();
+            let is_active = stor.current_start.is_some();
+            let mut classes = vec!["btn", "timer-start-btn"];
+            if is_active {
+                classes.push("btn-active");
+            }
             html! {
-                <button class=("btn","timer-start-btn"), onclick=self.link.callback(|_| Msg::OnStart),>{ "Start ⏱" }</button>
+                <button class=classes, onclick=self.link.callback(|_| Msg::OnStart),>{ "Start ⏱" }</button>
             }
         } else {
             html! {}
