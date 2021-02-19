@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 mod components;
 
-use components::timer_widget::{TimerStorage, TimerWidget};
+use components::timer_widget::{self, TimerStorage, TimerWidget};
 
 const VIEW_DATA_HASH: &str = "#view-data";
 
@@ -38,6 +38,8 @@ struct TimedButtonPress {
 
 struct Model {
     link: ComponentLink<Self>,
+    timer_master: TimerStorage,
+    master_link: Option<ComponentLink<TimerWidget>>,
     timer1: TimerStorage,
     timer2: TimerStorage,
     timer3: TimerStorage,
@@ -49,6 +51,7 @@ pub enum Msg {
     Timer1Start,
     Timer2Start,
     Timer3Start,
+    SetChildLink(ComponentLink<TimerWidget>),
     StopAll,
     ClearData,
     ViewData,
@@ -62,6 +65,8 @@ impl Component for Model {
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
         Self {
             link,
+            timer_master: TimerStorage::new(),
+            master_link: None,
             timer1: TimerStorage::new(),
             timer2: TimerStorage::new(),
             timer3: TimerStorage::new(),
@@ -77,16 +82,19 @@ impl Component for Model {
         match msg {
             Msg::Timer1Start => {
                 self.push_history(1);
+                self.ensure_master_started();
                 self.timer2.stop();
                 self.timer3.stop();
             }
             Msg::Timer2Start => {
                 self.push_history(2);
+                self.ensure_master_started();
                 self.timer1.stop();
                 self.timer3.stop();
             }
             Msg::Timer3Start => {
                 self.push_history(3);
+                self.ensure_master_started();
                 self.timer1.stop();
                 self.timer2.stop();
             }
@@ -94,6 +102,7 @@ impl Component for Model {
                 self.stop_all();
             }
             Msg::ClearData => {
+                self.timer_master.clear();
                 self.timer1.clear();
                 self.timer2.clear();
                 self.timer3.clear();
@@ -109,6 +118,9 @@ impl Component for Model {
                 let location = web_sys::window().unwrap().location();
                 let new_location = format!("{}", location.pathname().unwrap());
                 location.assign(&new_location).unwrap();
+            }
+            Msg::SetChildLink(link) => {
+                self.master_link = Some(link);
             }
         }
         true
@@ -143,6 +155,12 @@ impl Component for Model {
 }
 
 impl Model {
+    fn ensure_master_started(&mut self) {
+        if let Some(link) = &self.master_link {
+            link.send_message(timer_widget::Msg::OnStart);
+        }
+    }
+
     fn push_history(&mut self, activity: u8) {
         self.history.push(TimedButtonPress {
             activity,
@@ -200,6 +218,14 @@ impl Model {
                         storage=&self.timer3,
                         text="Activity 3: ",
                         on_start=self.link.callback(|_| Msg::Timer3Start),
+                        />
+                </section>
+                <section class="global-buttons">
+                    <TimerWidget
+                        storage=&self.timer_master,
+                        text="Duration since start: ",
+                        show_start_button=false,
+                        on_create=Some(self.link.callback(|child_link| Msg::SetChildLink(child_link))),
                         />
                 </section>
                 <section class="global-buttons">

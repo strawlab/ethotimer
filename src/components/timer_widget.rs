@@ -68,6 +68,8 @@ pub struct Props {
     /// Triggered when the timer is started.
     #[prop_or_default]
     pub on_start: Option<Callback<()>>,
+    #[prop_or_default]
+    pub on_create: Option<Callback<ComponentLink<TimerWidget>>>, //Some(|child_link| Msg::SetChildLink(child_link)),
 }
 
 pub struct TimerWidget {
@@ -84,6 +86,9 @@ impl Component for TimerWidget {
     type Properties = Props;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+        if let Some(cb) = props.on_create {
+            cb.emit(link.clone());
+        }
         Self {
             link,
             job: None,
@@ -105,14 +110,20 @@ impl Component for TimerWidget {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::OnStart => {
-                let mut stor = self.storage.rc.borrow_mut();
-                if stor.current_start.is_none() {
-                    stor.current_start = Some(instant::Instant::now());
+                let did_start = {
+                    let mut stor = self.storage.rc.borrow_mut();
+                    if stor.current_start.is_none() {
+                        stor.current_start = Some(instant::Instant::now());
+                        true
+                    } else {
+                        false
+                    }
+                };
 
+                if did_start {
                     if let Some(ref mut callback) = self.on_start {
                         callback.emit(());
                     }
-
                     let handle = IntervalService::spawn(
                         Duration::from_millis(100),
                         self.link.callback(|_| Msg::RenderAll),
