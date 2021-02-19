@@ -35,6 +35,7 @@ impl std::fmt::Display for MyError {
 struct TimedButtonPress {
     activity: u8,
     when: chrono::DateTime<chrono::Local>,
+    is_active: bool,
 }
 
 struct Model {
@@ -182,9 +183,42 @@ impl Model {
     }
 
     fn push_history(&mut self, activity: u8) {
+        let when = chrono::Local::now();
+        {
+            // Currently, activities are mutually exclusive,
+            // so starting one should stop the others.
+            if activity != 1 {
+                if self.timer1.is_active() {
+                    self.history.push(TimedButtonPress {
+                        activity: 1,
+                        when,
+                        is_active: false,
+                    });
+                }
+            }
+            if activity != 2 {
+                if self.timer2.is_active() {
+                    self.history.push(TimedButtonPress {
+                        activity: 2,
+                        when,
+                        is_active: false,
+                    });
+                }
+            }
+            if activity != 3 {
+                if self.timer3.is_active() {
+                    self.history.push(TimedButtonPress {
+                        activity: 3,
+                        when,
+                        is_active: false,
+                    });
+                }
+            }
+        }
         self.history.push(TimedButtonPress {
             activity,
-            when: chrono::Local::now(),
+            when,
+            is_active: true,
         });
     }
     fn stop_all(&mut self) {
@@ -200,12 +234,17 @@ impl Model {
     }
 
     fn get_data_csv(&self) -> String {
-        let mut lines = vec!["duration_from_start_seconds,activity_id".to_string()];
+        let mut lines = vec!["duration_from_start_seconds,activity_id,is_active".to_string()];
         if self.history.len() > 0 {
             let s0 = self.history[0].when;
             for row in self.history.iter() {
                 let dur_msec = row.when.signed_duration_since(s0).num_milliseconds();
-                lines.push(format!("{},{}", dur_msec as f64 / 1000.0, row.activity));
+                lines.push(format!(
+                    "{},{},{}",
+                    dur_msec as f64 / 1000.0,
+                    row.activity,
+                    row.is_active as u8
+                ));
             }
         }
         lines.join("\n")

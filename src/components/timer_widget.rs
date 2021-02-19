@@ -20,6 +20,18 @@ impl TimerStorage {
 }
 
 impl TimerStorage {
+    pub fn is_active(&self) -> bool {
+        self.rc.borrow().current_start.is_some()
+    }
+    pub fn total_elapsed(&self) -> Duration {
+        let stor = self.rc.borrow();
+
+        let cur_dur = match &stor.current_start {
+            Some(start) => start.elapsed(),
+            None => Duration::from_secs(0),
+        };
+        stor.prev_elapsed + cur_dur
+    }
     pub fn clear(&mut self) {
         let mut stor = self.rc.borrow_mut();
         stor.current_start = None;
@@ -45,16 +57,6 @@ pub enum Msg {
 struct TimerStorageInner {
     current_start: Option<instant::Instant>,
     prev_elapsed: Duration,
-}
-
-impl TimerStorageInner {
-    fn total_elapsed(&self) -> Duration {
-        let cur_dur = match &self.current_start {
-            Some(start) => start.elapsed(),
-            None => Duration::from_secs(0),
-        };
-        self.prev_elapsed + cur_dur
-    }
 }
 
 #[derive(PartialEq, Clone, Properties)]
@@ -135,8 +137,7 @@ impl Component for TimerWidget {
                 // This triggers a rerender because ShouldRender is returned true.
 
                 // Also check if we need to keep the timer running.
-                let stor = self.storage.rc.borrow();
-                if stor.current_start.is_none() {
+                if !self.storage.is_active() {
                     self.job = None;
                 }
             }
@@ -147,7 +148,7 @@ impl Component for TimerWidget {
     fn view(&self) -> Html {
         let elapsed = format!(
             "{:4.1}",
-            self.storage.rc.borrow().total_elapsed().as_millis() as f64 / 1000.0
+            self.storage.total_elapsed().as_millis() as f64 / 1000.0
         );
         let start_button = if self.show_start_button {
             let stor = self.storage.rc.borrow();
