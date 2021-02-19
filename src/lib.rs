@@ -112,12 +112,23 @@ impl Component for Model {
                 self.stop_all();
                 let location = web_sys::window().unwrap().location();
                 let new_location = format!("{}{}", location.pathname().unwrap(), VIEW_DATA_HASH);
-                location.assign(&new_location).unwrap();
+
+                web_sys::window()
+                    .unwrap()
+                    .history()
+                    .unwrap()
+                    .replace_state_with_url(&"".into(), "", Some(&new_location))
+                    .unwrap();
             }
             Msg::ViewTimers => {
                 let location = web_sys::window().unwrap().location();
                 let new_location = format!("{}", location.pathname().unwrap());
-                location.assign(&new_location).unwrap();
+                web_sys::window()
+                    .unwrap()
+                    .history()
+                    .unwrap()
+                    .replace_state_with_url(&"".into(), "", Some(&new_location))
+                    .unwrap();
             }
             Msg::SetChildLink(link) => {
                 self.master_link = Some(link);
