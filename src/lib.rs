@@ -11,6 +11,7 @@ mod components;
 use components::timer_widget::{self, TimerStorage, TimerWidget};
 
 const VIEW_DATA_HASH: &str = "#view-data";
+const FILENAME_TEMPLATE: &str = "ethotimer_%Y%m%d_%H%M%S.%f.csv";
 
 // -----------------------------------------------------------------------------
 
@@ -56,6 +57,7 @@ pub enum Msg {
     ClearData,
     ViewData,
     ViewTimers,
+    DownloadCsv,
 }
 
 impl Component for Model {
@@ -129,6 +131,13 @@ impl Component for Model {
                     .unwrap()
                     .replace_state_with_url(&"".into(), "", Some(&new_location))
                     .unwrap();
+            }
+            Msg::DownloadCsv => {
+                let stamp = chrono::Local::now();
+                let local: chrono::DateTime<chrono::Local> = stamp.with_timezone(&chrono::Local);
+                let filename = local.format(&FILENAME_TEMPLATE).to_string();
+                let data_csv = self.get_data_csv();
+                download_file(data_csv.as_bytes(), &filename);
             }
             Msg::SetChildLink(link) => {
                 self.master_link = Some(link);
@@ -207,7 +216,10 @@ impl Model {
         html! {
             <>
                 <button class=("btn","global-button"), id="view-btn", onclick=self.link.callback(|_| Msg::ViewTimers),>{ "← Return to timers" }</button>
-                <pre>{data_csv}</pre>
+                <div class="csv-view">
+                    <pre>{data_csv}</pre>
+                </div>
+                <button class=("btn"), id="download-csv-btn", onclick=self.link.callback(|_| Msg::DownloadCsv),>{ "Download .csv" }</button>
             </>
         }
     }
@@ -247,6 +259,43 @@ impl Model {
             </>
         }
     }
+}
+
+// -----------------------------------------------------------------------------
+
+fn download_file(orig_buf: &[u8], filename: &str) {
+    use wasm_bindgen::JsCast;
+
+    let mime_type = "application/octet-stream";
+    let b = js_sys::Uint8Array::new(&unsafe { js_sys::Uint8Array::view(&orig_buf) }.into());
+    let array = js_sys::Array::new();
+    array.push(&b.buffer());
+
+    let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(
+        &array,
+        web_sys::BlobPropertyBag::new().type_(mime_type),
+    )
+    .unwrap();
+    let data_url = web_sys::Url::create_object_url_with_blob(&blob).unwrap();
+    let document = web_sys::window().unwrap().document().unwrap();
+    let anchor = document
+        .create_element("a")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlAnchorElement>()
+        .unwrap();
+
+    anchor.set_href(&data_url);
+    anchor.set_download(&filename);
+    anchor.set_target("_blank");
+
+    anchor.style().set_property("display", "none").unwrap();
+    let body = document.body().unwrap();
+    body.append_child(&anchor).unwrap();
+
+    anchor.click();
+
+    body.remove_child(&anchor).unwrap();
+    web_sys::Url::revoke_object_url(&data_url).unwrap();
 }
 
 // -----------------------------------------------------------------------------
