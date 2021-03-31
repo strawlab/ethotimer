@@ -17,7 +17,7 @@ chrono = {version="0.4", features=["serde","wasmbind"]}
 yew = "0.17.4"
 
 wasm-bindgen = "^0.2.45"
-web-sys = {version="^0.3.49", features=["Blob", "DateTimeValue", "File",
+web-sys = {version="^0.3.50", features=["Blob", "DateTimeValue", "File",
     "FileList", "FileReader", "HtmlInputElement", "Document", "Window", "Location",
     "History", "HtmlAnchorElement", "Element", "CssStyleDeclaration"]}
 js-sys = "0.3.50"
