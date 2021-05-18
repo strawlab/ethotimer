@@ -8,6 +8,8 @@ pub struct TimerStorage {
     rc: Rc<RefCell<TimerStorageInner>>,
 }
 
+impl yew::html::ImplicitClone for TimerStorage {}
+
 impl TimerStorage {
     pub fn new() -> Self {
         Self {
@@ -158,7 +160,7 @@ impl Component for TimerWidget {
                 classes.push("btn-active");
             }
             html! {
-                <button class=classes, onclick=self.link.callback(|_| Msg::OnStart),>{ "Start ⏱" }</button>
+                <button class=classes onclick=self.link.callback(|_| Msg::OnStart)>{ "Start ⏱" }</button>
             }
         } else {
             html! {}

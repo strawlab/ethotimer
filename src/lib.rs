@@ -160,12 +160,12 @@ impl Component for Model {
         };
 
         html! {
-            <div id="page-container",>
-                <div id="content-wrap",>
+            <div id="page-container">
+                <div id="content-wrap">
                     <h1>{"⏱ ethotimer"}</h1>
                     <p class="small-text">{"Timers for collecting data to make ethograms and related."}</p>
                     {inner}
-                    <footer id="footer", class="small-text">{"Source code: "}<a href="https://github.com/strawlab/ethotimer/">{"strawlab/ethotimer"}</a>{" | "}{format!("Compile date: {} (revision {})",
+                    <footer id="footer" class="small-text">{"Source code: "}<a href="https://github.com/strawlab/ethotimer/">{"strawlab/ethotimer"}</a>{" | "}{format!("Compile date: {} (revision {})",
                                         env!("GIT_DATE"),
                                         env!("GIT_HASH"))}
                     </footer>
@@ -254,11 +254,11 @@ impl Model {
         let data_csv = self.get_data_csv();
         html! {
             <>
-                <button class=("btn","global-button"), id="view-btn", onclick=self.link.callback(|_| Msg::ViewTimers),>{ "← Return to timers" }</button>
+                <button class=classes!("btn","global-button") id="view-btn" onclick=self.link.callback(|_| Msg::ViewTimers)>{ "← Return to timers" }</button>
                 <div class="csv-view">
                     <pre>{data_csv}</pre>
                 </div>
-                <button class=("btn"), id="download-csv-btn", onclick=self.link.callback(|_| Msg::DownloadCsv),>{ "Download .csv" }</button>
+                <button class="btn" id="download-csv-btn" onclick=self.link.callback(|_| Msg::DownloadCsv)>{ "Download .csv" }</button>
             </>
         }
     }
@@ -267,33 +267,33 @@ impl Model {
             <>
                 <section class="timers">
                     <TimerWidget
-                        storage=&self.timer1,
-                        text="Activity 1: ",
-                        on_start=self.link.callback(|_| Msg::Timer1Start),
+                        storage=&self.timer1
+                        text="Activity 1: "
+                        on_start=self.link.callback(|_| Msg::Timer1Start)
                         />
                     <TimerWidget
-                        storage=&self.timer2,
-                        text="Activity 2: ",
-                        on_start=self.link.callback(|_| Msg::Timer2Start),
+                        storage=&self.timer2
+                        text="Activity 2: "
+                        on_start=self.link.callback(|_| Msg::Timer2Start)
                         />
                     <TimerWidget
-                        storage=&self.timer3,
-                        text="Activity 3: ",
-                        on_start=self.link.callback(|_| Msg::Timer3Start),
+                        storage=&self.timer3
+                        text="Activity 3: "
+                        on_start=self.link.callback(|_| Msg::Timer3Start)
                         />
                 </section>
                 <section class="global-buttons">
                     <TimerWidget
-                        storage=&self.timer_master,
-                        text="Duration since start: ",
-                        show_start_button=false,
-                        on_create=Some(self.link.callback(|child_link| Msg::SetChildLink(child_link))),
+                        storage=&self.timer_master
+                        text="Duration since start: "
+                        show_start_button=false
+                        on_create=Some(self.link.callback(|child_link| Msg::SetChildLink(child_link)))
                         />
                 </section>
                 <section class="global-buttons">
-                    <button class=("btn","global-button"), id="stop-btn", onclick=self.link.callback(|_| Msg::StopAll),>{ "Stop" }</button>
-                    <button class=("btn","global-button"), id="clear-btn", onclick=self.link.callback(|_| Msg::ClearData),>{ "Clear Data" }</button>
-                    <button class=("btn","global-button"), id="view-btn", onclick=self.link.callback(|_| Msg::ViewData),>{ "Stop and View Data" }</button>
+                    <button class=classes!("btn","global-button") id="stop-btn" onclick=self.link.callback(|_| Msg::StopAll)>{ "Stop" }</button>
+                    <button class=classes!("btn","global-button") id="clear-btn" onclick=self.link.callback(|_| Msg::ClearData)>{ "Clear Data" }</button>
+                    <button class=classes!("btn","global-button") id="view-btn" onclick=self.link.callback(|_| Msg::ViewData)>{ "Stop and View Data" }</button>
                 </section>
             </>
         }
