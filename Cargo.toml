@@ -8,7 +8,7 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-bytesize = "1.0"
+bytesize = "1.1"
 log = "0.4"
 wasm-logger = "0.2.0"
 instant = { version = "0.1", features = [ "wasm-bindgen" ] }
