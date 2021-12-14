@@ -2,6 +2,7 @@
 
 use wasm_bindgen::prelude::*;
 
+use yew::html::Scope;
 use yew::prelude::*;
 
 use serde::{Deserialize, Serialize};
@@ -39,9 +40,8 @@ struct TimedButtonPress {
 }
 
 struct Model {
-    link: ComponentLink<Self>,
     timer_master: TimerStorage,
-    master_link: Option<ComponentLink<TimerWidget>>,
+    master_link: Option<Scope<TimerWidget>>,
     timer1: TimerStorage,
     timer2: TimerStorage,
     timer3: TimerStorage,
@@ -53,7 +53,7 @@ pub enum Msg {
     Timer1Start,
     Timer2Start,
     Timer3Start,
-    SetChildLink(ComponentLink<TimerWidget>),
+    SetChildLink(Scope<TimerWidget>),
     StopAll,
     ClearData,
     ViewData,
@@ -65,9 +65,8 @@ impl Component for Model {
     type Message = Msg;
     type Properties = ();
 
-    fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         Self {
-            link,
             timer_master: TimerStorage::new(),
             master_link: None,
             timer1: TimerStorage::new(),
@@ -76,12 +75,7 @@ impl Component for Model {
             history: vec![],
         }
     }
-
-    fn change(&mut self, _: ()) -> ShouldRender {
-        false
-    }
-
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::Timer1Start => {
                 self.push_history(1);
@@ -147,16 +141,16 @@ impl Component for Model {
         true
     }
 
-    fn view(&self) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         // let document = web_sys::window().unwrap().document().unwrap();
         // // Should we use location() instead of url()?
         // let url = web_sys::Url::new(&document.url().unwrap()).unwrap();
         // let hash = url.hash();
         let hash = web_sys::window().unwrap().location().hash().unwrap();
         let inner = if hash == VIEW_DATA_HASH {
-            self.view_data()
+            self.view_data(ctx)
         } else {
-            self.view_timers()
+            self.view_timers(ctx)
         };
 
         html! {
@@ -250,50 +244,50 @@ impl Model {
         lines.join("\n")
     }
 
-    fn view_data(&self) -> Html {
+    fn view_data(&self, ctx: &Context<Self>) -> Html {
         let data_csv = self.get_data_csv();
         html! {
             <>
-                <button class=classes!("btn","global-button") id="view-btn" onclick=self.link.callback(|_| Msg::ViewTimers)>{ "← Return to timers" }</button>
+                <button class={classes!("btn","global-button")} id="view-btn" onclick={ctx.link().callback(|_| Msg::ViewTimers)}>{ "← Return to timers" }</button>
                 <div class="csv-view">
                     <pre>{data_csv}</pre>
                 </div>
-                <button class="btn" id="download-csv-btn" onclick=self.link.callback(|_| Msg::DownloadCsv)>{ "Download .csv" }</button>
+                <button class="btn" id="download-csv-btn" onclick={ctx.link().callback(|_| Msg::DownloadCsv)}>{ "Download .csv" }</button>
             </>
         }
     }
-    fn view_timers(&self) -> Html {
+    fn view_timers(&self, ctx: &Context<Self>) -> Html {
         html! {
             <>
                 <section class="timers">
                     <TimerWidget
-                        storage=&self.timer1
+                        storage={&self.timer1}
                         text="Activity 1: "
-                        on_start=self.link.callback(|_| Msg::Timer1Start)
+                        on_start={ctx.link().callback(|_| Msg::Timer1Start)}
                         />
                     <TimerWidget
-                        storage=&self.timer2
+                        storage={&self.timer2}
                         text="Activity 2: "
-                        on_start=self.link.callback(|_| Msg::Timer2Start)
+                        on_start={ctx.link().callback(|_| Msg::Timer2Start)}
                         />
                     <TimerWidget
-                        storage=&self.timer3
+                        storage={&self.timer3}
                         text="Activity 3: "
-                        on_start=self.link.callback(|_| Msg::Timer3Start)
+                        on_start={ctx.link().callback(|_| Msg::Timer3Start)}
                         />
                 </section>
                 <section class="global-buttons">
                     <TimerWidget
-                        storage=&self.timer_master
+                        storage={&self.timer_master}
                         text="Duration since start: "
                         show_start_button=false
-                        on_create=Some(self.link.callback(|child_link| Msg::SetChildLink(child_link)))
+                        on_create={Some(ctx.link().callback(|child_link| Msg::SetChildLink(child_link)))}
                         />
                 </section>
                 <section class="global-buttons">
-                    <button class=classes!("btn","global-button") id="stop-btn" onclick=self.link.callback(|_| Msg::StopAll)>{ "Stop" }</button>
-                    <button class=classes!("btn","global-button") id="clear-btn" onclick=self.link.callback(|_| Msg::ClearData)>{ "Clear Data" }</button>
-                    <button class=classes!("btn","global-button") id="view-btn" onclick=self.link.callback(|_| Msg::ViewData)>{ "Stop and View Data" }</button>
+                    <button class={classes!("btn","global-button")} id="stop-btn" onclick={ctx.link().callback(|_| Msg::StopAll)}>{ "Stop" }</button>
+                    <button class={classes!("btn","global-button")} id="clear-btn" onclick={ctx.link().callback(|_| Msg::ClearData)}>{ "Clear Data" }</button>
+                    <button class={classes!("btn","global-button")} id="view-btn" onclick={ctx.link().callback(|_| Msg::ViewData)}>{ "Stop and View Data" }</button>
                 </section>
             </>
         }
