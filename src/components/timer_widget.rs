@@ -1,7 +1,8 @@
 use std::{cell::RefCell, rc::Rc, time::Duration};
 
+use gloo_timers::callback::Interval;
+use yew::html::Scope;
 use yew::prelude::*;
-use yew::services::{IntervalService, Task};
 
 #[derive(PartialEq, Clone)]
 pub struct TimerStorage {
@@ -73,49 +74,29 @@ pub struct Props {
     #[prop_or_default]
     pub on_start: Option<Callback<()>>,
     #[prop_or_default]
-    pub on_create: Option<Callback<ComponentLink<TimerWidget>>>, //Some(|child_link| Msg::SetChildLink(child_link)),
+    pub on_create: Option<Callback<Scope<TimerWidget>>>,
 }
 
 pub struct TimerWidget {
-    link: ComponentLink<Self>,
-    job: Option<Box<dyn Task>>,
-    storage: TimerStorage,
-    show_start_button: bool,
-    text: String,
-    on_start: Option<Callback<()>>,
+    job: Option<Interval>,
 }
 
 impl Component for TimerWidget {
     type Message = Msg;
     type Properties = Props;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        if let Some(cb) = props.on_create {
-            cb.emit(link.clone());
+    fn create(ctx: &Context<Self>) -> Self {
+        if let Some(cb) = &ctx.props().on_create {
+            cb.emit(ctx.link().clone());
         }
-        Self {
-            link,
-            job: None,
-            storage: props.storage,
-            show_start_button: props.show_start_button,
-            text: props.text,
-            on_start: props.on_start,
-        }
+        Self { job: None }
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        self.storage = props.storage;
-        self.show_start_button = props.show_start_button;
-        self.text = props.text;
-        self.on_start = props.on_start;
-        true
-    }
-
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::OnStart => {
                 let did_start = {
-                    let mut stor = self.storage.rc.borrow_mut();
+                    let mut stor = ctx.props().storage.rc.borrow_mut();
                     if stor.current_start.is_none() {
                         stor.current_start = Some(instant::Instant::now());
                         true
@@ -125,21 +106,19 @@ impl Component for TimerWidget {
                 };
 
                 if did_start {
-                    if let Some(ref mut callback) = self.on_start {
+                    if let Some(ref callback) = ctx.props().on_start {
                         callback.emit(());
                     }
-                    let handle = IntervalService::spawn(
-                        Duration::from_millis(100),
-                        self.link.callback(|_| Msg::RenderAll),
-                    );
-                    self.job = Some(Box::new(handle));
+                    let link = ctx.link().clone();
+                    let handle = Interval::new(100, move || link.send_message(Msg::RenderAll));
+                    self.job = Some(handle);
                 }
             }
             Msg::RenderAll => {
                 // This triggers a rerender because ShouldRender is returned true.
 
                 // Also check if we need to keep the timer running.
-                if !self.storage.is_active() {
+                if !ctx.props().storage.is_active() {
                     self.job = None;
                 }
             }
@@ -147,20 +126,20 @@ impl Component for TimerWidget {
         true
     }
 
-    fn view(&self) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let elapsed = format!(
             "{:4.1}",
-            self.storage.total_elapsed().as_millis() as f64 / 1000.0
+            ctx.props().storage.total_elapsed().as_millis() as f64 / 1000.0
         );
-        let start_button = if self.show_start_button {
-            let stor = self.storage.rc.borrow();
+        let start_button = if ctx.props().show_start_button {
+            let stor = ctx.props().storage.rc.borrow();
             let is_active = stor.current_start.is_some();
             let mut classes = vec!["btn", "timer-start-btn"];
             if is_active {
                 classes.push("btn-active");
             }
             html! {
-                <button class=classes onclick=self.link.callback(|_| Msg::OnStart)>{ "Start ⏱" }</button>
+                <button class={classes} onclick={ctx.link().callback(|_| Msg::OnStart)}>{ "Start ⏱" }</button>
             }
         } else {
             html! {}
@@ -169,7 +148,7 @@ impl Component for TimerWidget {
             <div class="timer">
                 {start_button}
                 <div>
-                    {&self.text}<span class="elapsed">{&elapsed}</span>
+                    {&ctx.props().text}<span class="elapsed">{&elapsed}</span>
                 </div>
             </div>
         }
