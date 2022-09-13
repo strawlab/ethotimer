@@ -24,7 +24,7 @@ serde = { version = "^1.0.144", features = ['derive'] }
 futures = "0.3"
 
 [dependencies.web-sys]
-version="0.3.59"
+version="0.3.60"
 features=[
     "Blob",
     "CssStyleDeclaration",
