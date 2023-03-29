@@ -297,8 +297,6 @@ impl Model {
 // -----------------------------------------------------------------------------
 
 fn download_file(orig_buf: &[u8], filename: &str) {
-    use wasm_bindgen::JsCast;
-
     let mime_type = "application/octet-stream";
     let b = js_sys::Uint8Array::new(&unsafe { js_sys::Uint8Array::view(&orig_buf) }.into());
     let array = js_sys::Array::new();
