@@ -11,8 +11,8 @@ pub struct TimerStorage {
 
 impl yew::html::ImplicitClone for TimerStorage {}
 
-impl TimerStorage {
-    pub fn new() -> Self {
+impl Default for TimerStorage {
+    fn default() -> Self {
         Self {
             rc: Rc::new(RefCell::new(TimerStorageInner {
                 prev_elapsed: Duration::from_secs(0),

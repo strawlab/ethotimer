@@ -67,11 +67,11 @@ impl Component for Model {
 
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
-            timer_master: TimerStorage::new(),
+            timer_master: TimerStorage::default(),
             master_link: None,
-            timer1: TimerStorage::new(),
-            timer2: TimerStorage::new(),
-            timer3: TimerStorage::new(),
+            timer1: TimerStorage::default(),
+            timer2: TimerStorage::default(),
+            timer3: TimerStorage::default(),
             history: vec![],
         }
     }
@@ -119,7 +119,7 @@ impl Component for Model {
             }
             Msg::ViewTimers => {
                 let location = web_sys::window().unwrap().location();
-                let new_location = format!("{}", location.pathname().unwrap());
+                let new_location = location.pathname().unwrap();
                 web_sys::window()
                     .unwrap()
                     .history()
@@ -130,7 +130,7 @@ impl Component for Model {
             Msg::DownloadCsv => {
                 let stamp = chrono::Local::now();
                 let local: chrono::DateTime<chrono::Local> = stamp.with_timezone(&chrono::Local);
-                let filename = local.format(&FILENAME_TEMPLATE).to_string();
+                let filename = local.format(FILENAME_TEMPLATE).to_string();
                 let data_csv = self.get_data_csv();
                 download_file(data_csv.as_bytes(), &filename);
             }
@@ -181,32 +181,26 @@ impl Model {
         {
             // Currently, activities are mutually exclusive,
             // so starting one should stop the others.
-            if activity != 1 {
-                if self.timer1.is_active() {
-                    self.history.push(TimedButtonPress {
-                        activity: 1,
-                        when,
-                        is_active: false,
-                    });
-                }
+            if activity != 1 && self.timer1.is_active() {
+                self.history.push(TimedButtonPress {
+                    activity: 1,
+                    when,
+                    is_active: false,
+                });
             }
-            if activity != 2 {
-                if self.timer2.is_active() {
-                    self.history.push(TimedButtonPress {
-                        activity: 2,
-                        when,
-                        is_active: false,
-                    });
-                }
+            if activity != 2 && self.timer2.is_active() {
+                self.history.push(TimedButtonPress {
+                    activity: 2,
+                    when,
+                    is_active: false,
+                });
             }
-            if activity != 3 {
-                if self.timer3.is_active() {
-                    self.history.push(TimedButtonPress {
-                        activity: 3,
-                        when,
-                        is_active: false,
-                    });
-                }
+            if activity != 3 && self.timer3.is_active() {
+                self.history.push(TimedButtonPress {
+                    activity: 3,
+                    when,
+                    is_active: false,
+                });
             }
         }
         self.history.push(TimedButtonPress {
@@ -217,10 +211,8 @@ impl Model {
     }
     fn stop_all(&mut self) {
         let n_history = self.history.len();
-        if n_history > 0 {
-            if self.history[n_history - 1].activity != 0 {
-                self.push_history(0);
-            }
+        if n_history > 0 && self.history[n_history - 1].activity != 0 {
+            self.push_history(0);
         }
         self.timer1.stop();
         self.timer2.stop();
@@ -229,7 +221,7 @@ impl Model {
 
     fn get_data_csv(&self) -> String {
         let mut lines = vec!["duration_from_start_seconds,activity_id,is_active".to_string()];
-        if self.history.len() > 0 {
+        if !self.history.is_empty() {
             let s0 = self.history[0].when;
             for row in self.history.iter() {
                 let dur_msec = row.when.signed_duration_since(s0).num_milliseconds();
@@ -281,7 +273,7 @@ impl Model {
                         storage={&self.timer_master}
                         text="Duration since start: "
                         show_start_button=false
-                        on_create={Some(ctx.link().callback(|child_link| Msg::SetChildLink(child_link)))}
+                        on_create={Some(ctx.link().callback(Msg::SetChildLink))}
                         />
                 </section>
                 <section class="global-buttons">
@@ -298,7 +290,7 @@ impl Model {
 
 fn download_file(orig_buf: &[u8], filename: &str) {
     let mime_type = "application/octet-stream";
-    let b = js_sys::Uint8Array::new(&unsafe { js_sys::Uint8Array::view(&orig_buf) }.into());
+    let b = js_sys::Uint8Array::new(&unsafe { js_sys::Uint8Array::view(orig_buf) }.into());
     let array = js_sys::Array::new();
     array.push(&b.buffer());
 
@@ -316,7 +308,7 @@ fn download_file(orig_buf: &[u8], filename: &str) {
         .unwrap();
 
     anchor.set_href(&data_url);
-    anchor.set_download(&filename);
+    anchor.set_download(filename);
     anchor.set_target("_blank");
 
     anchor.style().set_property("display", "none").unwrap();
