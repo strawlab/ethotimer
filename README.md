@@ -2,6 +2,8 @@
 
 View it live at https://strawlab.org/ethotimer/
 
+![ethotimer](ethotimer.png)
+
 ## Development
 
     # On linux/macOS:
